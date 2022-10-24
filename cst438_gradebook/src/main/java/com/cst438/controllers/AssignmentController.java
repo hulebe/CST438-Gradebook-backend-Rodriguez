@@ -4,6 +4,8 @@ import java.sql.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,8 +35,9 @@ public class AssignmentController {
 	// Add new assignment
 	@PostMapping("/assignment")
 	@Transactional
-	public AssignmentListDTO.AssignmentDTO addAssignment(@RequestBody AssignmentListDTO.AssignmentDTO assignmentDTO ) {
+	public AssignmentListDTO.AssignmentDTO addAssignment(@RequestBody AssignmentListDTO.AssignmentDTO assignmentDTO) {
 		System.out.println("check called");
+				
 		// look up the course
 		Course c = courseRepository.findById(assignmentDTO.courseId).get();
 		
@@ -42,6 +45,7 @@ public class AssignmentController {
 			// invalid error
 			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "Course not found. "+assignmentDTO.courseId );
 		}
+		
 		// create a new assignment entity
 		Assignment assignment = new Assignment();
 		
@@ -66,9 +70,13 @@ public class AssignmentController {
 	// Change the name of the assignment for my course 
 	@PutMapping("/assignment/{assignmentId}")
 	@Transactional
-	public AssignmentListDTO.AssignmentDTO changeAssignmentName(@PathVariable int assignmentId, @RequestBody AssignmentListDTO.AssignmentDTO assignmentDTO) {
+	public AssignmentListDTO.AssignmentDTO changeAssignmentName(@PathVariable int assignmentId, @RequestBody AssignmentListDTO.AssignmentDTO assignmentDTO, @AuthenticationPrincipal OAuth2User principal) {
 		
-		String email = "dwisneski@csumb.edu";
+		//String email = "dwisneski@csumb.edu"; // hard code email
+		
+		String email = principal.getAttribute("email");  // user name (should be instructor's email) 
+		String name = principal.getAttribute("name"); 
+
 		
 		//Find assignment by ID
 		Assignment assignment = checkAssignment(assignmentId,email);
@@ -87,9 +95,10 @@ public class AssignmentController {
 	// Delete an assignment for the course (only if there are no grades for the assignment)
 	@DeleteMapping("/assignment/{assignmentId}")
 	@Transactional
-	public void deleteAssignment(@PathVariable int assignmentId) {
+	public void deleteAssignment(@PathVariable int assignmentId, @AuthenticationPrincipal OAuth2User principal) {
 		
-		String email = "dwisneski@csumb.edu";
+		String email = principal.getAttribute("email");
+		//String email = "dwisneski@csumb.edu";
 		
 		//Find assignment by ID
 		Assignment assignment = checkAssignment(assignmentId,email);
